@@ -1,13 +1,5 @@
 
-# Dokumentasi S2S
-
-**Local Speech-to-Speech AI Assistant**
-
-* **Nama**: Gania Rafidah Huwaida
-* **NIM**: 235150301111047
-* **Instansi**: Universitas Brawijaya
-* **Unit Magang**: Telkom Indonesia (BigBox)
-
+# Local Speech-to-Speech AI Assistant
 ---
 
 ## Pendahuluan
@@ -69,5 +61,11 @@ Sistem diuji dengan memberikan input suara secara langsung. Berikut adalah tampi
 ## Kesimpulan
 
 Proyek ini berhasil membuktikan bahwa asisten suara yang cerdas dapat dijalankan pada *hardware* terbatas (CPU-only) dengan latensi yang dapat diterima, berkat penggunaan model yang dikuantisasi dan manajemen *container* yang baik.
+
+---
+## Repository & Kontak
+
+- **GitHub Repository**: [github.com/gnieerfd/n8n-base-knowledge](https://github.com/gnieerfd/Local_Speech-to-Speech_AI-Assistant)
+- **Author**: Gania Rafidah Huwaida
 
 ---
