@@ -65,7 +65,7 @@ Proyek ini berhasil membuktikan bahwa asisten suara yang cerdas dapat dijalankan
 ---
 ## Repository & Kontak
 
-- **GitHub Repository**: [github.com/gnieerfd/n8n-base-knowledge](https://github.com/gnieerfd/Local_Speech-to-Speech_AI-Assistant)
+- **GitHub Repository**: [github.com/gnieerfd/Local_Speech-to-Speech_AI-Assistant](https://github.com/gnieerfd/Local_Speech-to-Speech_AI-Assistant)
 - **Author**: Gania Rafidah Huwaida
 
 ---
