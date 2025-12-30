@@ -62,7 +62,7 @@ Pengecekan ketersediaan model di dalam container untuk memastikan sistem siap me
 
 Sistem diuji dengan memberikan input suara secara langsung. Berikut adalah tampilan log interaksi yang menunjukkan proses transkripsi, berpikir, dan respon suara.
 
-![terminal-log](.\docs\images\terminal-log.jpeg)
+![terminal-log](./docs/images/terminal-log.jpeg)
 
 ---
 
