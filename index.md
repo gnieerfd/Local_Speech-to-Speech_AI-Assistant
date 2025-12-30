@@ -54,9 +54,7 @@ Otak asisten (LLM) dijalankan melalui Docker Desktop untuk memastikan stabilitas
 
 Pengecekan ketersediaan model di dalam container untuk memastikan sistem siap menerima *request*.
 
-> **Lampiran Screenshot 3: Ollama Model List**
-> ![Output Command ollama list di Terminal](./docs/images/command-ollama.jpeg )
-> *Deskripsi: Verifikasi model llama3.2:1b telah terpasang dengan benar di dalam sistem Docker.*
+![Output Command ollama list di Terminal](./docs/images/command-ollama.jpeg )
 
 ---
 
@@ -64,7 +62,7 @@ Pengecekan ketersediaan model di dalam container untuk memastikan sistem siap me
 
 Sistem diuji dengan memberikan input suara secara langsung. Berikut adalah tampilan log interaksi yang menunjukkan proses transkripsi, berpikir, dan respon suara.
 
-![terminal-log](.\docs\images\terminal-log.jpeg")
+![terminal-log](.\docs\images\terminal-log.jpeg)
 
 ---
 
