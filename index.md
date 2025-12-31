@@ -50,6 +50,41 @@ Pengecekan ketersediaan model di dalam container untuk memastikan sistem siap me
 
 ---
 
+## 📊 Monitoring Performa & Optimasi Resource
+
+Menjalankan model ASR (Whisper) dan LLM (Llama) secara lokal pada hardware terbatas memerlukan manajemen resource yang ketat. Berikut adalah analisis beban kerja pada sistem:
+
+### 1. Analisis Beban CPU (Stress Test)
+Selama proses *inference* (berpikir), CPU Intel Core i5-1235U mencapai utilitas maksimal.
+
+| Metrik | Nilai Pengujian | Analisis Teknik |
+| :--- | :--- | :--- |
+| **Utilitas CPU** | 100% (1.91 GHz) | Terjadi beban puncak saat kontainer Docker memproses teks. |
+| **Total Threads** | 4.510 Threads | Sistem menangani 326 proses secara konkuren. |
+| **Docker Load** | 709.77% CPU | Kontainer `ollama-brain` memeras seluruh *logical processors* yang tersedia. |
+
+![CPU Stress](./docs/images/cpu-100.jpeg)
+---
+
+### 2. Status Memori/RAM: Kritis vs Teroptimasi
+RAM 8GB adalah *bottleneck* utama. Tanpa optimasi, sistem akan mengalami *memory thrashing*.
+![RAM Kritis](./docs/images/ram-95.jpeg)
+
+#### 🔴 Kondisi Kritis (Tanpa Optimasi)
+Saat menjalankan aplikasi berat (browser/Brave) bersamaan dengan Jarvis:
+- **Penggunaan RAM**: 94-95% (7.3/7.7 GB).
+- **Available RAM**: Hanya tersisa **522 MB**.
+- **Committed Memory**: Membengkak hingga **18.4 GB**, memaksa SSD bekerja sebagai *virtual memory* (Pagefile) yang memperlambat respon.
+
+#### 🟢 Kondisi Teroptimasi (Setelah Kalibrasi)
+Setelah menutup aplikasi non-esensial dan melakukan *clean setup*:
+- **Penggunaan RAM**: Stabil di angka **76%**.
+- **Resource Terbesar**: `VmmemWSL` (Docker) menggunakan **457.2 MB**.
+- **Sektor Efisiensi**: VS Code dikurangi bebannya hingga hanya memakan **409.3 MB**.
+![RAM Teroptimasi](./docs/images/ram-76.jpeg)
+
+---
+
 ## Hasil Pengujian Sistem
 
 Sistem diuji dengan memberikan input suara secara langsung. Berikut adalah tampilan log interaksi yang menunjukkan proses transkripsi, berpikir, dan respon suara.
