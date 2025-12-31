@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis S2S - Testing Lab</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: #1e293b; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        button { padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top: 20px; }
+        .btn-record { background: #ef4444; color: white; }
+        .btn-record.recording { background: #22c55e; animation: pulse 1.5s infinite; }
+        #status { margin-top: 20px; font-weight: bold; color: #94a3b8; }
+        #chat-box { margin-top: 30px; text-align: left; background: #0f172a; padding: 15px; border-radius: 10px; min-height: 100px; border: 1px solid #334155; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Jarvis S2S Testing</h1>
+        <p>Gunakan tombol di bawah untuk berbicara dengan asisten.</p>
+        
+        <button id="recordBtn" class="btn-record">Start Recording</button>
+        <div id="status">Status: Ready</div>
+
+        <div id="chat-box">
+            <p><strong>User:</strong> <span id="userText">-</span></p>
+            <hr style="border-color: #334155;">
+            <p><strong>Jarvis:</strong> <span id="jarvisText">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        const recordBtn = document.getElementById('recordBtn');
+        const statusText = document.getElementById('status');
+        const userOutput = document.getElementById('userText');
+        const jarvisOutput = document.getElementById('jarvisText');
+
+        // URL Ngrok Backend Lo (Update manual jika ngrok restart!)
+        const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev/ask_jarvis";
+
+        let mediaRecorder;
+        let audioChunks = [];
+
+        recordBtn.addEventListener('click', async () => {
+            if (recordBtn.classList.contains('recording')) {
+                mediaRecorder.stop();
+                recordBtn.classList.remove('recording');
+                recordBtn.innerText = "Start Recording";
+                statusText.innerText = "Status: Processing (Waiting for local AI)...";
+            } else {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                mediaRecorder.onstop = sendAudio;
+
+                mediaRecorder.start();
+                recordBtn.classList.add('recording');
+                recordBtn.innerText = "Stop Recording";
+                statusText.innerText = "Status: Recording...";
+            }
+        });
+
+        async function sendAudio() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'request.wav');
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+                
+                userOutput.innerText = data.user;
+                jarvisOutput.innerText = data.jarvis;
+                statusText.innerText = "Status: Response Received!";
+            } catch (err) {
+                console.error(err);
+                statusText.innerText = "Status: Error (Cek koneksi Backend/Ngrok)";
+            }
+        }
+    </script>
+</body>
+</html>
