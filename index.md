@@ -49,6 +49,16 @@ Pengecekan ketersediaan model di dalam container untuk memastikan sistem siap me
 ![Output Command ollama list di Terminal](./docs/images/command-ollama.jpeg )
 
 ---
+## 💻 Testing Environment (Hardware Specs)
+
+Sistem ini diuji menggunakan perangkat dengan spesifikasi berikut untuk mengukur latensi dan stabilitas pipeline S2S:
+
+* **Processor**: 12th Gen Intel(R) Core(TM) i5-1235U (10 Cores, 12 Logical Processors)
+* **Memory**: 8.0 GB RAM DDR4 @3200 MT/s
+* **GPU**: NVIDIA GeForce MX550 (Dedicated) & Intel(R) UHD Graphics
+* **Storage**: SSD NVMe 
+* **OS**: Windows 11 Home
+---
 
 ## 📊 Monitoring Performa & Optimasi Resource
 
