@@ -51,7 +51,7 @@ Pengecekan ketersediaan model di dalam container untuk memastikan sistem siap me
 ---
 ## 💻 Testing Environment (Hardware Specs)
 
-Sistem ini diuji menggunakan perangkat dengan spesifikasi berikut untuk mengukur latensi dan stabilitas pipeline S2S:
+Sistem ini diuji menggunakan perangkat dengan spesifikasi berikut untuk mengukur latensi dan stabilitas pipeline STS:
 
 * **Processor**: 12th Gen Intel(R) Core(TM) i5-1235U (10 Cores, 12 Logical Processors)
 * **Memory**: 8.0 GB RAM DDR4 @3200 MT/s
