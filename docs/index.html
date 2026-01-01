@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis S2S - Testing Lab</title>
+    <title>Assistant STS - Testing Lab</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
         .container { max-width: 600px; margin: auto; background: #1e293b; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
@@ -17,7 +17,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎙️ Jarvis S2S Testing</h1>
+        <h1>🎙️ STS Testing Lab</h1>
         <p>Gunakan tombol di bawah untuk berbicara dengan asisten.</p>
         
         <button id="recordBtn" class="btn-record">Start Recording</button>
@@ -26,7 +26,7 @@
         <div id="chat-box">
             <p><strong>User:</strong> <span id="userText">-</span></p>
             <hr style="border-color: #334155;">
-            <p><strong>Jarvis:</strong> <span id="jarvisText">-</span></p>
+            <p><strong>Assistant:</strong> <span id="assistantText">-</span></p>
         </div>
     </div>
 
@@ -34,11 +34,11 @@
         const recordBtn = document.getElementById('recordBtn');
         const statusText = document.getElementById('status');
         const userOutput = document.getElementById('userText');
-        const jarvisOutput = document.getElementById('jarvisText');
+        const assistantOutput = document.getElementById('assistantText');
 
-        // URL Ngrok Backend Lo (Update manual jika ngrok restart!)
-        const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev/ask_jarvis";
-
+        // URL Ngrok Backend (Sesuaikan dengan endpoint di api_server.py lo)
+        const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev/ask_sts";
+        
         let mediaRecorder;
         let audioChunks = [];
 
@@ -49,50 +49,54 @@
                 recordBtn.innerText = "Start Recording";
                 statusText.innerText = "Status: Processing (Waiting for local AI)...";
             } else {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
 
-                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                mediaRecorder.onstop = sendAudio;
+                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                    mediaRecorder.onstop = sendAudio;
 
-                mediaRecorder.start();
-                recordBtn.classList.add('recording');
-                recordBtn.innerText = "Stop Recording";
-                statusText.innerText = "Status: Recording...";
+                    mediaRecorder.start();
+                    recordBtn.classList.add('recording');
+                    recordBtn.innerText = "Stop Recording";
+                    statusText.innerText = "Status: Recording...";
+                } catch (err) {
+                    statusText.innerText = "Status: Error (Akses Mic Ditolak)";
+                }
             }
         });
 
-    async function sendAudio() {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'request.wav');
+        async function sendAudio() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'request.wav');
 
-        try {
-            const response = await fetch(BACKEND_URL, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
 
-            if (data.error) throw new Error(data.error);
-            
-            // Tampilkan Teks
-            userOutput.innerText = data.user;
-            jarvisOutput.innerText = data.jarvis;
-            statusText.innerText = "Status: Response Received!";
+                if (data.error) throw new Error(data.error);
+                
+                // Sinkronisasi dengan key JSON dari backend (assistant_text)
+                userOutput.innerText = data.user;
+                assistantOutput.innerText = data.assistant_text || data.assistant;
+                statusText.innerText = "Status: Response Received!";
 
-            // LOGIKA BARU: Putar Audio dari Jarvis
-            if (data.audio) {
-                const audioContent = `data:audio/wav;base64,${data.audio}`;
-                const audio = new Audio(audioContent);
-                audio.play(); // Browser akan otomatis memutar suara Jarvis
+                // Putar Audio Base64
+                if (data.audio) {
+                    const audioContent = `data:audio/wav;base64,${data.audio}`;
+                    const audio = new Audio(audioContent);
+                    audio.play();
+                }
+            } catch (err) {
+                console.error(err);
+                statusText.innerText = "Status: Error (Cek koneksi Backend/Ngrok)";
             }
-        } catch (err) {
-            console.error(err);
-            statusText.innerText = "Status: Error (Cek koneksi Backend/Ngrok)";
         }
-    }
     </script>
 </body>
 </html>
