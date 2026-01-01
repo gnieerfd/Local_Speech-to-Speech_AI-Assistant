@@ -37,7 +37,7 @@
         const jarvisOutput = document.getElementById('jarvisText');
 
         // URL Ngrok Backend Lo (Update manual jika ngrok restart!)
-        const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev/ask_jarvis";
+        const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev";
 
         let mediaRecorder;
         let audioChunks = [];
@@ -63,28 +63,36 @@
             }
         });
 
-        async function sendAudio() {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'request.wav');
+    async function sendAudio() {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'request.wav');
 
-            try {
-                const response = await fetch(BACKEND_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+        try {
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
 
-                if (data.error) throw new Error(data.error);
-                
-                userOutput.innerText = data.user;
-                jarvisOutput.innerText = data.jarvis;
-                statusText.innerText = "Status: Response Received!";
-            } catch (err) {
-                console.error(err);
-                statusText.innerText = "Status: Error (Cek koneksi Backend/Ngrok)";
+            if (data.error) throw new Error(data.error);
+            
+            // Tampilkan Teks
+            userOutput.innerText = data.user;
+            jarvisOutput.innerText = data.jarvis;
+            statusText.innerText = "Status: Response Received!";
+
+            // LOGIKA BARU: Putar Audio dari Jarvis
+            if (data.audio) {
+                const audioContent = `data:audio/wav;base64,${data.audio}`;
+                const audio = new Audio(audioContent);
+                audio.play(); // Browser akan otomatis memutar suara Jarvis
             }
+        } catch (err) {
+            console.error(err);
+            statusText.innerText = "Status: Error (Cek koneksi Backend/Ngrok)";
         }
+    }
     </script>
 </body>
 </html>
