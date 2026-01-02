@@ -37,8 +37,11 @@
 
 <script>
     let audioContext, analyser, silenceTimer;
-    const SILENCE_THRESHOLD = 0.030; // Ambang batas suara
-    const SILENCE_DURATION = 1000;   // 2 detik diam = stop
+    let isListeningMode = false; // Flag untuk mode continuous
+    
+    // Sesuai revisi terakhir lo ke Mas Abas
+    const SILENCE_THRESHOLD = 0.030; 
+    const SILENCE_DURATION = 1500; // 1.5 detik diam langsung proses
     
     const recordBtn = document.getElementById('recordBtn');
     const statusText = document.getElementById('status');
@@ -52,13 +55,33 @@
     let mediaRecorder;
     let audioChunks = [];
 
-    // FUNGSI UTAMA STOP
+    // FUNGSI UNTUK START RECORDING (Bisa dipanggil otomatis)
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+            mediaRecorder.onstop = sendAudio;
+
+            mediaRecorder.start();
+            recordBtn.classList.add('recording');
+            recordBtn.innerText = "Listening...";
+            statusText.innerText = "Status: Assistant is listening...";
+            
+            startSilenceDetection(stream);
+        } catch (err) {
+            statusText.innerText = "Status: Mic Error!";
+            isListeningMode = false;
+        }
+    }
+
     function stopRecordingAction() {
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
             mediaRecorder.stop();
             recordBtn.classList.remove('recording');
-            recordBtn.innerText = "Start Recording";
-            statusText.innerText = "Status: Processing AI Response...";
+            recordBtn.innerText = "Processing...";
+            statusText.innerText = "Status: Analyzing your speech...";
             if (audioContext) {
                 audioContext.close();
                 audioContext = null;
@@ -66,31 +89,15 @@
         }
     }
 
-    recordBtn.addEventListener('click', async () => {
-        audioPlayer.play().catch(() => {}); 
-        audioPlayer.pause();
-        playBtn.style.display = "none";
-
-        if (recordBtn.classList.contains('recording')) {
-            stopRecordingAction();
+    // Tombol sekarang cuma buat "Pemicu Awal"
+    recordBtn.addEventListener('click', () => {
+        if (!isListeningMode) {
+            isListeningMode = true; // Aktifkan mode auto-loop
+            startRecording();
         } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                mediaRecorder.onstop = sendAudio;
-
-                mediaRecorder.start();
-                recordBtn.classList.add('recording');
-                recordBtn.innerText = "Stop Recording";
-                statusText.innerText = "Status: Listening (Auto-stop active)...";
-
-                startSilenceDetection(stream);
-            } catch (err) {
-                statusText.innerText = "Status: Error (Akses Mic Ditolak)";
-            }
+            isListeningMode = false; // Matikan jika diklik lagi
+            stopRecordingAction();
+            recordBtn.innerText = "Start Recording";
         }
     });
 
@@ -105,22 +112,33 @@
             
             userOutput.innerText = data.user;
             assistantOutput.innerText = data.assistant_text || data.assistant;
-            statusText.innerText = "Status: Response Received!";
+            statusText.innerText = "Status: Assistant Speaking...";
 
             if (data.audio) {
                 audioPlayer.src = `data:audio/wav;base64,${data.audio}`;
-                audioPlayer.load(); 
+                audioPlayer.load();
                 audioPlayer.play().catch(() => {
                     playBtn.style.display = "block";
-                    statusText.innerText = "Status: Klik tombol hijau untuk suara!";
                 });
+            } else {
+                // Jika tidak ada audio, langsung balik dengerin
+                if (isListeningMode) setTimeout(startRecording, 500);
             }
         } catch (err) {
-            statusText.innerText = "Status: Error (Cek koneksi Ngrok)";
+            statusText.innerText = "Status: Connection Error!";
+            if (isListeningMode) setTimeout(startRecording, 2000);
         }
     }
 
-function startSilenceDetection(stream) {
+    // KUNCI UTAMA TANTANGAN MAS ABAS
+    audioPlayer.onended = () => {
+        if (isListeningMode) {
+            console.log("Loop: Assistant finished speaking. Returning to listening mode...");
+            setTimeout(startRecording, 300); // Delay dikit biar transisi smooth
+        }
+    };
+
+    function startSilenceDetection(stream) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioContext.createMediaStreamSource(stream);
         analyser = audioContext.createAnalyser();
@@ -143,7 +161,6 @@ function startSilenceDetection(stream) {
             if (rmsValue < SILENCE_THRESHOLD) {
                 if (!silenceTimer) {
                     silenceTimer = setTimeout(() => {
-                        console.log("VAD: Silence detected. Auto-stopping...");
                         stopRecordingAction();
                     }, SILENCE_DURATION);
                 }
@@ -160,7 +177,6 @@ function startSilenceDetection(stream) {
         audioPlayer.play();
         playBtn.style.display = "none";
     });
-
 </script>
 </body>
 </html>
