@@ -101,34 +101,57 @@
         }
     });
 
-    async function sendAudio() {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'request.wav');
+async function sendAudio() {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'request.wav');
 
-        try {
-            const response = await fetch(BACKEND_URL, { method: 'POST', body: formData });
-            const data = await response.json();
+    try {
+        const response = await fetch(BACKEND_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        userOutput.innerText = data.user;
+        assistantOutput.innerText = data.assistant_text || data.assistant;
+
+        // --- LOGIKA EXIT STRATEGY (TAMBAHKAN INI) ---
+        const exitCommands = ['bye', 'dadah', 'sampai jumpa', 'selesai', 'stop'];
+        const userSpeech = data.user.toLowerCase();
+        
+        // Cek apakah user ngomong kata kunci exit
+        if (exitCommands.some(cmd => userSpeech.includes(cmd))) {
+            console.log("Voice Exit triggered by user.");
+            isListeningMode = false; // Matikan mode loop
+            statusText.innerText = "Status: Session Terminated by Voice Command";
+            recordBtn.innerText = "Start Recording";
+            recordBtn.classList.remove('recording');
             
-            userOutput.innerText = data.user;
-            assistantOutput.innerText = data.assistant_text || data.assistant;
-            statusText.innerText = "Status: Assistant Speaking...";
-
+            // Putar suara asisten terakhir (opsional) lalu benar-benar berhenti
             if (data.audio) {
                 audioPlayer.src = `data:audio/wav;base64,${data.audio}`;
-                audioPlayer.load();
-                audioPlayer.play().catch(() => {
-                    playBtn.style.display = "block";
-                });
-            } else {
-                // Jika tidak ada audio, langsung balik dengerin
-                if (isListeningMode) setTimeout(startRecording, 500);
+                audioPlayer.play();
+                // Setelah audio bye selesai, dia tidak akan startRecording lagi 
+                // karena isListeningMode sudah false.
             }
-        } catch (err) {
-            statusText.innerText = "Status: Connection Error!";
-            if (isListeningMode) setTimeout(startRecording, 2000);
+            return; // Keluar dari fungsi, jangan lanjut ke loop bawah
         }
+        // --------------------------------------------
+
+        statusText.innerText = "Status: Assistant Speaking...";
+
+        if (data.audio) {
+            audioPlayer.src = `data:audio/wav;base64,${data.audio}`;
+            audioPlayer.load();
+            audioPlayer.play().catch(() => {
+                playBtn.style.display = "block";
+            });
+        } else {
+            if (isListeningMode) setTimeout(startRecording, 500);
+        }
+    } catch (err) {
+        statusText.innerText = "Status: Connection Error!";
+        if (isListeningMode) setTimeout(startRecording, 2000);
     }
+}
 
     // KUNCI UTAMA TANTANGAN MAS ABAS
     audioPlayer.onended = () => {
