@@ -1,31 +1,52 @@
-import requests
+import http.client
+import json
 
 class BrainEngine:
-    def __init__(self, model_name="llama3.2:1b"):
-        # Port 11434 adalah port standar Ollama di Docker yang sudah kamu jalankan
-        self.url = "http://localhost:11434/api/generate"
-        self.model_name = model_name
-
-        # Di dalam brain.py, ubah bagian prompt:
-    def generate_response(self, user_text):
-        # Prompt Engineering agar Jarvis lebih "pintar" dan to-the-point
-        prompt = f"""
-        Kamu adalah Jarvis, seorang teknisi yang tegas dan analitis. Sebagai asisten saya, tugasmu adalah membantu saya dengan jawaban yang singkat, jelas, dan tepat sasaran. Hindari basa-basi dan jawaban yang bertele-tele.
-        Jawabanmu harus berdasarkan fakta dan data teknis yang akurat. Jika kamu tidak tahu jawabannya, katakan "Saya tidak tahu" daripada memberikan informasi yang salah.
-        Gunakan bahasa Indonesia yang formal dan profesional.
-        Pertanyaan: {user_text}
-        """
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "stream": False
-        }
+    def __init__(self):
+        # Konfigurasi API dari Mas Abas
+        self.host = "telkom-ai-dag.api.apilogy.id"
+        self.api_key = "bsF7x7lBEfb0PfCXJXBaczUY7Yeas9gY"
+        self.path = "/Telkom-LLM/0.0.4/llm/chat/completions"
         
+        # System Prompt disiplin untuk TTS
+        self.system_prompt = (
+            "Anda adalah asisten suara pintar yang dikembangkan oleh Gania Rafidah Huwaida. "
+            "Jawablah dengan jelas, padat, dan sangat profesional. "
+            "PENTING: Jangan gunakan format markdown seperti bintang (*) atau pagar (#) "
+            "dalam jawaban Anda, karena jawaban Anda akan langsung dibacakan oleh mesin TTS."
+        )
+
+    def generate_response(self, user_text):
+        print(f"[BRAIN] Menghubungi Cloud Telkom-LLM...")
         try:
-            # Mengirim request ke kontainer ollama-brain yang sedang UP
-            response = requests.post(self.url, json=payload, timeout=180)
-            if response.status_code == 200:
-                return response.json().get('response', '').strip()
-            return "Maaf, komunikasi dengan otak terputus."
+            conn = http.client.HTTPSConnection(self.host)
+            
+            # Payload data mengikuti instruksi Mas Abas
+            payload_data = {
+                "model": "telkom-ai",
+                "messages": [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": user_text}
+                ],
+                "max_tokens": 1000,
+                "temperature": 0.7,
+                "stream": False 
+            }
+
+            headers = {
+                'Content-Type': "application/json",
+                'Accept': "application/json",
+                'x-api-key': self.api_key
+            }
+
+            conn.request("POST", self.path, json.dumps(payload_data), headers)
+            res = conn.getresponse()
+            data = res.read().decode("utf-8")
+            
+            # Parsing data JSON
+            response_json = json.loads(data)
+            return response_json['choices'][0]['message']['content'].strip()
+
         except Exception as e:
-            return f"Koneksi ke Ollama gagal. Pastikan Docker aktif! ({e})"
+            print(f"[ERROR BRAIN] Gagal akses Cloud API: {e}")
+            return "Maaf, koneksi ke pusat data sedang mengalami gangguan."
