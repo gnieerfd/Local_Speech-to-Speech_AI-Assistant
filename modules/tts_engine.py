@@ -1,32 +1,21 @@
-import pyttsx3
-import time
+from gtts import gTTS
+import os
+import re
 
 class TTSEngine:
     def __init__(self):
-        # Kita hanya simpan konfigurasinya, bukan engine-nya
-        self.rate = 175
+        self.lang = 'id'
 
-    def say(self, text):
-        print(f"[TTS] Jarvis sedang berbicara...")
+    def speak(self, text, output_path):
+        """Merubah teks menjadi file audio natural via Cloud."""
+        print(f"[TTS] Assistant sedang men-generate suara natural (Google Cloud)...")
         try:
-            # Inisialisasi ULANG setiap kali bicara untuk memastikan 
-            # COM object segar dan tidak 'hang' karena CPU bottleneck
-            engine = pyttsx3.init()
-            engine.setProperty('rate', self.rate)
+            clean_text = re.sub(r'[*#_~]', '', text)
             
-            voices = engine.getProperty('voices')
-            # Gunakan suara Indonesia jika tersedia
-            engine.setProperty('voice', voices[1].id if len(voices) > 1 else voices[0].id)
+            tts = gTTS(text=clean_text, lang=self.lang, slow=False)
             
-            engine.say(text)
-            engine.runAndWait()
-            
-            # WAJIB: Hentikan dan hapus objek untuk membebaskan memori
-            engine.stop()
-            del engine
-            
-            # Beri jeda kecil agar driver audio Windows bisa 'bernapas'
-            time.sleep(0.5)
+            tts.save(output_path)
+            print(f"[SUCCESS] Audio natural tersimpan: {output_path}")
             
         except Exception as e:
-            print(f"[ERROR TTS] Gagal mengeluarkan suara: {e}")
+            print(f"[ERROR TTS] gTTS Gagal: {e}")

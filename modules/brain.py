@@ -3,12 +3,10 @@ import json
 
 class BrainEngine:
     def __init__(self):
-        # Konfigurasi API tetap dari Mas Abas
         self.host = "telkom-ai-dag.api.apilogy.id"
         self.api_key = "bsF7x7lBEfb0PfCXJXBaczUY7Yeas9gY"
         self.path = "/Telkom-LLM/0.0.4/llm/chat/completions"
         
-        # Kapasitas Memori: Simpan 4 percakapan terakhir (User + Assistant)
         self.history = []
         self.max_history = 8 # 4 user + 4 assistant
         
@@ -44,7 +42,7 @@ class BrainEngine:
                 'Accept': "application/json",
                 'x-api-key': self.api_key
             }
-
+            print(f"DEBUG PAYLOAD MESSAGES: {json.dumps(messages, indent=2)}")
             conn.request("POST", self.path, json.dumps(payload_data), headers)
             res = conn.getresponse()
             data = res.read().decode("utf-8")

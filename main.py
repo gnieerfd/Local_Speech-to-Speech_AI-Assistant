@@ -1,8 +1,8 @@
-from src.audio_engine import AudioEngine
-from src.vad_handler import VADHandler
-from src.asr_engine import ASREngine
-from src.brain import BrainEngine
-from src.tts_engine import TTSEngine
+from modules.audio_engine import AudioEngine
+from modules.vad_handler import VADHandler
+from modules.asr import ASREngine
+from modules.brain import BrainEngine
+from modules.tts_engine import TTSEngine
 from config import DEFAULT_MIC_INDEX
 
 def main():
