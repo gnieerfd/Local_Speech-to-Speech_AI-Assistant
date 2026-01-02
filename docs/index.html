@@ -17,7 +17,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎙️ STS Testing Lab</h1>
+        <h1>🎙️Voice Assistant</h1>
         <p>Gunakan tombol di bawah untuk berbicara dengan asisten.</p>
         
         <button id="recordBtn" class="btn-record">Start Recording</button>
@@ -37,8 +37,8 @@
 
 <script>
     let audioContext, analyser, silenceTimer;
-    const SILENCE_THRESHOLD = 0.015; // Ambang batas suara
-    const SILENCE_DURATION = 2000;   // 2 detik diam = stop
+    const SILENCE_THRESHOLD = 0.030; // Ambang batas suara
+    const SILENCE_DURATION = 1000;   // 2 detik diam = stop
     
     const recordBtn = document.getElementById('recordBtn');
     const statusText = document.getElementById('status');
