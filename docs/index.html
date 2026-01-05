@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 STS Comparative Lab</title>
+    <title>🔬 Voice Assistant</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
         .container { max-width: 950px; margin: auto; background: #1e293b; padding: 30px; border-radius: 15px; }
@@ -18,9 +18,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔬 STS Comparative Lab</h1>
-        <p>Researcher: <strong>Gania Rafidah</strong> | NIM: 235150301111047</p>
-        <button id="recordBtn" class="btn-record">Start Research Mode</button>
+        <h1>🔬 Voice Assistant</h1>
+        <button id="recordBtn" class="btn-record">Start </button>
         <div id="status">Status: Ready</div>
         <div class="lab-grid">
             <div class="chat-column" style="border-color: #ef4444;">
@@ -115,7 +114,6 @@
         }
     }
 
-    // --- CONTINUOUS LISTENING LOOP ---
     audioPlayer.onended = () => {
         if (isListeningMode) {
             console.log("Auto-restarting...");
@@ -123,7 +121,6 @@
         }
     };
 
-    // --- VAD (RMS CALCULATION) ---
     function startSilenceDetection(stream) {
         audioContext = new AudioContext();
         const source = audioContext.createMediaStreamSource(stream);
