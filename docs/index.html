@@ -3,41 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Voice Assistant</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: #1e293b; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        button { padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top: 20px; }
-        .btn-record { background: #ef4444; color: white; }
-        .btn-record.recording { background: #22c55e; animation: pulse 1.5s infinite; }
-        #status { margin-top: 20px; font-weight: bold; color: #94a3b8; }
-        #chat-box { margin-top: 30px; text-align: left; background: #0f172a; padding: 15px; border-radius: 10px; min-height: 100px; border: 1px solid #334155; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    </style>
-</head>
-<body>
-<div class="container" style="max-width: 900px;"> <h1>🔬 STS Comparative Lab</h1>
+    <title>Voice Assistant</title>
+<style>
+    .lab-grid { display: flex; gap: 20px; margin-top: 30px; }
+    .chat-column { 
+        flex: 1; 
+        background: #0f172a; 
+        padding: 15px; 
+        border-radius: 10px; 
+        min-height: 150px; 
+        border: 2px solid #334155; 
+        text-align: left;
+    }
+    .raw-border { border-color: #ef4444; }
+    .clean-border { border-color: #22c55e; }
+    .label { font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; display: block; }
+</style>
+
+<div class="container" style="max-width: 950px;">
+    <h1>🔬 STS Comparative Research Lab</h1>
+    <p>Researcher: <strong>Gania Rafidah</strong> | NIM: 235150301111047</p>
     
     <button id="recordBtn" class="btn-record">Start Research Mode</button>
     <div id="status">Status: Ready</div>
 
-    <div style="display: flex; gap: 20px; margin-top: 30px;">
-        <div id="chat-box" style="flex: 1; border-color: #ef4444;">
-            <h3 style="color: #ef4444;">🔴 RAW Signal </h3>
+    <div class="lab-grid">
+        <div class="chat-column raw-border">
+            <span class="label" style="color: #ef4444;">🔴 RAW Signal (With Noise)</span>
             <p><strong>ASR Text:</strong> <span id="userTextRaw">-</span></p>
-            <hr style="border-color: #334155;">
+            <hr style="border-color: #1e293b;">
             <p><strong>Response:</strong> <span id="assistantTextRaw">-</span></p>
         </div>
 
-        <div id="chat-box" style="flex: 1; border-color: #22c55e;">
-            <h3 style="color: #22c55e;">🟢 CLEAN Signal </h3>
+        <div class="chat-column clean-border">
+            <span class="label" style="color: #22c55e;">🟢 CLEAN Signal (VAD Active)</span>
             <p><strong>ASR Text:</strong> <span id="userTextClean">-</span></p>
-            <hr style="border-color: #334155;">
+            <hr style="border-color: #1e293b;">
             <p><strong>Response:</strong> <span id="assistantTextClean">-</span></p>
         </div>
     </div>
     
-    <button id="playBtn" style="display:none; background:#22c55e; width:100%;">🔊 Putar Jawaban (Clean Only)</button>
+    <button id="playBtn" style="display:none; background:#22c55e; width:100%; margin-top: 20px;">🔊 Putar Jawaban (Clean Only)</button>
 </div>
 
 <script>
