@@ -31,38 +31,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/ask_sts") 
-async def ask_sts(audio: UploadFile = File(...)):
-    temp_in = "temp_request.wav"
-    temp_out = "response.wav"
+@app.post("/ask_sts")
+async def ask_sts(
+    audio_raw: UploadFile = File(...), 
+    audio_clean: UploadFile = File(...)
+):
     try:
-        with open(temp_in, "wb") as buffer:
-            shutil.copyfileobj(audio.file, buffer)
+        # 1. Simpan audio asli untuk dokumentasi Mas Abas
+        raw_content = await audio_raw.read()
+        with open("temp_raw.wav", "wb") as f:
+            f.write(raw_content)
+
+        # 2. Proses audio_clean untuk ASR (Whisper)
+        clean_content = await audio_clean.read()
+        with open("temp_clean.wav", "wb") as f:
+            f.write(clean_content)
+
+        # 3. Transkripsi kedua file untuk perbandingan
+        text_raw = asr_engine.transcribe("temp_raw.wav")
+        text_clean = asr_engine.transcribe("temp_clean.wav")
+
+        # 4. Ambil respon Brain (LLM) berdasarkan hasil yang CLEAN
+        # Kita hanya pakai memori konteks untuk jalur Clean agar tetap akurat
+        answer_clean = brain.generate_response(text_clean)
         
-        user_text = asr.transcribe_file(temp_in) 
-        
-        if not user_text or user_text.strip() == "":
-            return {"user": "", "assistant": "Maaf, suara tidak terdengar jelas."}
+        # Simulasi respon untuk jalur RAW (bisa sama atau beda)
+        answer_raw = brain.generate_response(text_raw) 
 
-        assistant_response = brain.generate_response(user_text)
-
-        tts.speak(assistant_response, temp_out)
-
-        with open(temp_out, "rb") as f:
-            audio_base64 = base64.b64encode(f.read()).decode('utf-8')
+        # 5. Generate Suara (TTS) dari hasil yang CLEAN
+        audio_base64 = tts_engine.generate(answer_clean)
 
         return {
-            "user": user_text,
-            "assistant": assistant_response, 
+            "raw": {"text": text_raw, "response": answer_raw},
+            "clean": {"text": text_clean, "response": answer_clean},
             "audio": audio_base64
         }
     except Exception as e:
-        print(f"RUNTIME ERROR: {str(e)}")
-        return {"error": str(e)}
-    finally:
-        for f in [temp_in, temp_out]:
-            if os.path.exists(f):
-                os.remove(f)
+        print(f"Error: {e}")
+        return {"error": str(e)}, 500
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
