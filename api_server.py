@@ -35,16 +35,18 @@ def file_to_base64(filepath):
     with open(filepath, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
-def transcode_to_mp3(input_path, output_path):
+def transcode_to_mp3(input_path, output_path, is_clean=False):
     try:
         ffmpeg_exe = os.path.join(FFMPEG_PATH, "ffmpeg.exe")
-        command = [ffmpeg_exe, "-y", "-i", input_path, "-codec:a", "libmp3lame", "-b:a", "192k", output_path]
+        filter_cmd = ["-af", "afftdn"] if is_clean else []
+        
+        command = [ffmpeg_exe, "-y", "-i", input_path] + filter_cmd + ["-codec:a", "libmp3lame", "-b:a", "192k", output_path]
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return True
     except Exception as e:
         print(f"[FFMPEG ERROR]: {e}")
         return False
-
+    
 @app.post("/ask_sts")
 async def ask_sts(audio_raw: UploadFile = File(...), audio_clean: UploadFile = File(...)):
     # Nama file sementara
@@ -63,8 +65,8 @@ async def ask_sts(audio_raw: UploadFile = File(...), audio_clean: UploadFile = F
         text_clean = asr.transcribe_file(clean_in) 
 
         # 3. TRANSCODING: Ubah ke MP3 murni buat dikirim balik ke iPhone
-        transcode_to_mp3(raw_in, raw_out)
-        transcode_to_mp3(clean_in, clean_out)
+        transcode_to_mp3(raw_in, raw_out, is_clean=False) # RAW apa adanya
+        transcode_to_mp3(clean_in, clean_out, is_clean=True) # CLEAN pake filter
 
         # 4. Proses Otak AI (Hanya satu kali biar history aman)
         answer_final = brain.generate_response(text_clean)
@@ -88,7 +90,6 @@ async def ask_sts(audio_raw: UploadFile = File(...), audio_clean: UploadFile = F
         print(f"[CRITICAL ERROR]: {e}")
         return {"error": str(e)}, 500
     finally:
-        # 6. CLEANUP: Hapus file biar nggak menuhin SSD laptop Acer lo
         for f in [raw_in, clean_in, raw_out, clean_out]:
             if os.path.exists(f): os.remove(f)
      
