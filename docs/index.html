@@ -21,8 +21,8 @@
 </style>
 
 <div class="container" style="max-width: 950px;">
-    <h1>🔬 STS Comparative Research Lab</h1>
-    <p>Researcher: <strong>Gania Rafidah</strong> | NIM: 235150301111047</p>
+    <h1>🔬 Voice Assistant</h1>
+    <p>Researcher: <strong>Gania Rafidah</strong> </p>
     
     <button id="recordBtn" class="btn-record">Start Research Mode</button>
     <div id="status">Status: Ready</div>
@@ -47,47 +47,69 @@
 </div>
 
 <script>
+    // 1. DEFINISIKAN SEMUA KONSTANTA (JANGAN DIHAPUS!)
+    const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev/ask_sts";
+    const SILENCE_THRESHOLD = 0.035; // Filter RMS lo
+    const SILENCE_DURATION = 1500;   // 1.5 detik hening
+    
+    let audioContext, analyser, silenceTimer, mediaRecorder;
+    let audioChunks = [];
+    let isListeningMode = false;
+    const audioPlayer = new Audio();
+
+    // Link elemen UI
+    const recordBtn = document.getElementById('recordBtn');
+    const statusText = document.getElementById('status');
     const userOutputRaw = document.getElementById('userTextRaw');
     const assistantOutputRaw = document.getElementById('assistantTextRaw');
     const userOutputClean = document.getElementById('userTextClean');
     const assistantOutputClean = document.getElementById('assistantTextClean');
 
-    async function sendAudio() {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const formData = new FormData();
-        
-        formData.append('audio_raw', audioBlob, 'raw.wav');
-        formData.append('audio_clean', audioBlob, 'clean.wav');
-
+    // 2. FUNGSI UTAMA UNTUK START (YANG TADI LO HAPUS)
+    async function startRecording() {
         try {
-            const response = await fetch(BACKEND_URL, { method: 'POST', body: formData });
-            const data = await response.json();
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
             
-            userOutputRaw.innerText = data.raw.text;
-            assistantOutputRaw.innerText = data.raw.response;
+            mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+            mediaRecorder.onstop = sendAudio;
 
-            userOutputClean.innerText = data.clean.text;
-            assistantOutputClean.innerText = data.clean.response;
+            mediaRecorder.start();
+            recordBtn.classList.add('recording');
+            recordBtn.innerText = "Listening...";
+            statusText.innerText = "Status: Researching Audio...";
             
-            statusText.innerText = "Status: Comparison Complete";
-
-            if (data.audio) {
-                audioPlayer.src = `data:audio/wav;base64,${data.audio}`;
-                audioPlayer.play();
-            }
-            
-            if (isListeningMode) setTimeout(startRecording, 1000);
+            startSilenceDetection(stream);
         } catch (err) {
-            statusText.innerText = "Status: Connection Error!";
-            if (isListeningMode) setTimeout(startRecording, 2000);
+            console.error("Mic Error:", err);
+            statusText.innerText = "Status: Mic Access Denied! (Check HTTPS)";
+            isListeningMode = false;
         }
     }
-    audioPlayer.onended = () => {
-        if (isListeningMode) {
-            console.log("Loop: Assistant finished speaking. Returning to listening mode...");
-            setTimeout(startRecording, 300);
+
+    // 3. LOGIKA TOMBOL
+    recordBtn.addEventListener('click', () => {
+        if (!isListeningMode) {
+            isListeningMode = true;
+            startRecording();
+        } else {
+            isListeningMode = false;
+            stopRecordingAction();
+            recordBtn.innerText = "Start Research Mode";
+            recordBtn.classList.remove('recording');
         }
-    };
+    });
+
+    function stopRecordingAction() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+        }
+    }
 
     function startSilenceDetection(stream) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
