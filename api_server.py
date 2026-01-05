@@ -17,10 +17,9 @@ except Exception as e:
     print(f"ERROR: Gagal import modul. Detail: {e}")
     sys.exit()
 
-# Inisialisasi Engine
-asr = ASREngine()  # Nama variabel: asr
+asr = ASREngine()  
 brain = BrainEngine()
-tts = TTSEngine()  # Nama variabel: tts
+tts = TTSEngine()  
 
 app = FastAPI()
 
@@ -43,36 +42,38 @@ async def ask_sts(
         raw_path = "temp_raw.wav"
         clean_path = "temp_clean.wav"
 
+        # Simpan file audio
         with open(raw_path, "wb") as f:
             f.write(await audio_raw.read())
         with open(clean_path, "wb") as f:
             f.write(await audio_clean.read())
 
+        # 1. Transkripsi keduanya hanya untuk monitoring LAB
         text_raw = asr.transcribe_file(raw_path)    
         text_clean = asr.transcribe_file(clean_path) 
 
-        answer_clean = brain.generate_response(text_clean)
-        answer_raw = brain.generate_response(text_raw) 
+        # 2. EKSEKUSI: Panggil Brain HANYA satu kali
+        answer_final = brain.generate_response(text_clean)
 
-        audio_base64 = tts.generate(answer_clean)
+        # 3. Generate Audio respon asisten
+        audio_base64 = tts.generate(answer_final)
 
-        # REVISI DISINI: Kirimkan audio aslinya juga dalam format Base64
         return {
             "raw": {
                 "text": text_raw, 
-                "response": answer_raw,
-                "audio": file_to_base64(raw_path) # Panggil fungsinya!
+                "response": "(Monitoring Only)", 
+                "audio": file_to_base64(raw_path) 
             },
             "clean": {
                 "text": text_clean, 
-                "response": answer_clean,
-                "audio": file_to_base64(clean_path) # Panggil fungsinya!
+                "response": answer_final,
+                "audio": file_to_base64(clean_path) 
             },
-            "audio": audio_base64 # Suara asisten
+            "audio": audio_base64 
         }
     except Exception as e:
         print(f"[CRITICAL ERROR]: {e}")
         return {"error": str(e)}, 500
-    
+     
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
