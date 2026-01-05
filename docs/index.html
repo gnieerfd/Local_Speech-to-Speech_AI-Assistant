@@ -24,11 +24,13 @@
         <div class="lab-grid">
             <div class="chat-column" style="border-color: #ef4444;">
                 <h3 style="color: #ef4444;">🔴 RAW SIGNAL</h3>
+                <button onclick="playComparison('raw')" style="padding: 5px 10px; font-size: 12px; margin-bottom: 10px;">🔊 Play Raw</button>
                 <p><strong>ASR:</strong> <span id="userTextRaw">-</span></p><hr>
                 <p><strong>Res:</strong> <span id="assistantTextRaw">-</span></p>
             </div>
             <div class="chat-column" style="border-color: #22c55e;">
                 <h3 style="color: #22c55e;">🟢 CLEAN SIGNAL (VAD)</h3>
+                <button onclick="playComparison('clean')" style="padding: 5px 10px; font-size: 12px; margin-bottom: 10px;">🔊 Play Clean</button>
                 <p><strong>ASR:</strong> <span id="userTextClean">-</span></p><hr>
                 <p><strong>Res:</strong> <span id="assistantTextClean">-</span></p>
             </div>
@@ -37,11 +39,12 @@
     </div>
 
 <script>
-    // --- KONFIGURASI (JANGAN DIHAPUS!) ---
     const BACKEND_URL = "https://nonpreservative-dora-unexcusedly.ngrok-free.dev/ask_sts";
     const SILENCE_THRESHOLD = 0.035; 
     const SILENCE_DURATION = 1500; 
 
+    let currentRawAudio = null;
+    let currentCleanAudio = null;
     let audioContext, analyser, silenceTimer, mediaRecorder;
     let audioChunks = [];
     let isListeningMode = false;
@@ -50,7 +53,17 @@
     const recordBtn = document.getElementById('recordBtn');
     const statusText = document.getElementById('status');
 
-    // --- FUNGSI START RECORDING ---
+    // Fungsi Global untuk Playback
+    function playComparison(type) {
+        const base64 = (type === 'raw') ? currentRawAudio : currentCleanAudio;
+        if (base64) {
+            const tempAudio = new Audio(`data:audio/wav;base64,${base64}`);
+            tempAudio.play();
+        } else {
+            alert("Audio data belum tersedia!");
+        }
+    }
+
     async function startRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -64,33 +77,11 @@
             statusText.innerText = "Status: Monitoring RMS...";
             startSilenceDetection(stream);
         } catch (err) {
-            statusText.innerText = "Status: Mic Access Denied! (Check HTTPS)";
+            statusText.innerText = "Status: Mic Access Denied!";
             isListeningMode = false;
         }
     }
 
-    // --- LOGIKA TOMBOL ---
-    recordBtn.addEventListener('click', () => {
-        if (!isListeningMode) {
-            isListeningMode = true;
-            startRecording();
-        } else {
-            isListeningMode = false;
-            stopRecordingAction();
-            recordBtn.innerText = "Start Research Mode";
-            recordBtn.classList.remove('recording');
-        }
-    });
-
-    function stopRecordingAction() {
-        if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-            statusText.innerText = "Status: Processing Dual Stream...";
-            if (audioContext) { audioContext.close(); audioContext = null; }
-        }
-    }
-
-    // --- PENGIRIMAN DATA ---
     async function sendAudio() {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
         const formData = new FormData();
@@ -100,26 +91,29 @@
         try {
             const response = await fetch(BACKEND_URL, { method: 'POST', body: formData });
             const data = await response.json();
+            
+            // Update UI Teks
             document.getElementById('userTextRaw').innerText = data.raw.text;
             document.getElementById('assistantTextRaw').innerText = data.raw.response;
             document.getElementById('userTextClean').innerText = data.clean.text;
             document.getElementById('assistantTextClean').innerText = data.clean.response;
+            
+            // Simpan audio untuk perbandingan
+            currentRawAudio = data.raw.audio;
+            currentCleanAudio = data.clean.audio;
+            
             statusText.innerText = "Status: Analysis Complete";
+
             if (data.audio) {
                 audioPlayer.src = `data:audio/wav;base64,${data.audio}`;
                 audioPlayer.play();
             }
+            document.getElementById('playBtn').style.display = "block";
         } catch (err) {
             statusText.innerText = "Status: Backend Error!";
+            console.error(err);
         }
     }
-
-    audioPlayer.onended = () => {
-        if (isListeningMode) {
-            console.log("Auto-restarting...");
-            setTimeout(startRecording, 500);
-        }
-    };
 
     function startSilenceDetection(stream) {
         audioContext = new AudioContext();
@@ -128,12 +122,17 @@
         analyser.fftSize = 512;
         source.connect(analyser);
         const dataArray = new Float32Array(analyser.frequencyBinCount);
+
         function check() {
             if (!isListeningMode || !mediaRecorder || mediaRecorder.state === "inactive") return;
             analyser.getFloatTimeDomainData(dataArray);
+            
+            // Kalkulasi RMS:
+            // $$RMS = \sqrt{\frac{1}{n} \sum_{i=1}^{n} x_i^2}$$
             let sum = 0;
             for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
             let rms = Math.sqrt(sum / dataArray.length);
+
             if (rms < SILENCE_THRESHOLD) {
                 if (!silenceTimer) silenceTimer = setTimeout(stopRecordingAction, SILENCE_DURATION);
             } else {
@@ -141,8 +140,31 @@
             }
             requestAnimationFrame(check);
         }
-        check();
+        check(); // Panggil fungsi di dalam scope yang benar!
     }
+
+    function stopRecordingAction() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+            if (audioContext) { audioContext.close(); audioContext = null; }
+        }
+    }
+
+    recordBtn.addEventListener('click', () => {
+        if (!isListeningMode) {
+            isListeningMode = true;
+            startRecording();
+        } else {
+            isListeningMode = false;
+            stopRecordingAction();
+            recordBtn.innerText = "Start";
+            recordBtn.classList.remove('recording');
+        }
+    });
+
+    audioPlayer.onended = () => {
+        if (isListeningMode) setTimeout(startRecording, 500);
+    };
 </script>
 </body>
 </html>

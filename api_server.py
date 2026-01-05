@@ -1,6 +1,5 @@
 import os
 import sys
-import shutil
 import base64
 import uvicorn
 from fastapi import FastAPI, UploadFile, File
@@ -18,9 +17,10 @@ except Exception as e:
     print(f"ERROR: Gagal import modul. Detail: {e}")
     sys.exit()
 
-asr = ASREngine()
+# Inisialisasi Engine
+asr = ASREngine()  # Nama variabel: asr
 brain = BrainEngine()
-tts = TTSEngine()
+tts = TTSEngine()  # Nama variabel: tts
 
 app = FastAPI()
 
@@ -30,6 +30,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+def file_to_base64(filepath):
+    with open(filepath, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
 
 @app.post("/ask_sts")
 async def ask_sts(
@@ -37,38 +40,39 @@ async def ask_sts(
     audio_clean: UploadFile = File(...)
 ):
     try:
-        # 1. Simpan audio asli untuk dokumentasi Mas Abas
-        raw_content = await audio_raw.read()
-        with open("temp_raw.wav", "wb") as f:
-            f.write(raw_content)
+        raw_path = "temp_raw.wav"
+        clean_path = "temp_clean.wav"
 
-        # 2. Proses audio_clean untuk ASR (Whisper)
-        clean_content = await audio_clean.read()
-        with open("temp_clean.wav", "wb") as f:
-            f.write(clean_content)
+        with open(raw_path, "wb") as f:
+            f.write(await audio_raw.read())
+        with open(clean_path, "wb") as f:
+            f.write(await audio_clean.read())
 
-        # 3. Transkripsi kedua file untuk perbandingan
-        text_raw = asr_engine.transcribe("temp_raw.wav")
-        text_clean = asr_engine.transcribe("temp_clean.wav")
+        text_raw = asr.transcribe_file(raw_path)    
+        text_clean = asr.transcribe_file(clean_path) 
 
-        # 4. Ambil respon Brain (LLM) berdasarkan hasil yang CLEAN
-        # Kita hanya pakai memori konteks untuk jalur Clean agar tetap akurat
         answer_clean = brain.generate_response(text_clean)
-        
-        # Simulasi respon untuk jalur RAW (bisa sama atau beda)
         answer_raw = brain.generate_response(text_raw) 
 
-        # 5. Generate Suara (TTS) dari hasil yang CLEAN
-        audio_base64 = tts_engine.generate(answer_clean)
+        audio_base64 = tts.generate(answer_clean)
 
+        # REVISI DISINI: Kirimkan audio aslinya juga dalam format Base64
         return {
-            "raw": {"text": text_raw, "response": answer_raw},
-            "clean": {"text": text_clean, "response": answer_clean},
-            "audio": audio_base64
+            "raw": {
+                "text": text_raw, 
+                "response": answer_raw,
+                "audio": file_to_base64(raw_path) # Panggil fungsinya!
+            },
+            "clean": {
+                "text": text_clean, 
+                "response": answer_clean,
+                "audio": file_to_base64(clean_path) # Panggil fungsinya!
+            },
+            "audio": audio_base64 # Suara asisten
         }
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"[CRITICAL ERROR]: {e}")
         return {"error": str(e)}, 500
-
+    
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
