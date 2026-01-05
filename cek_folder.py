@@ -1,6 +1,5 @@
 import os
 
-# Cek struktur folder secara otomatis
 path_modules = os.path.join(os.getcwd(), "modules")
 init_file = os.path.join(path_modules, "__init__.py")
 

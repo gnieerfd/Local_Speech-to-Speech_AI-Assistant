@@ -1,6 +1,5 @@
 import pyaudio
 import numpy as np
-# Pastikan file config.py ada di folder yang sama
 from config import SAMPLE_RATE, CHUNK_SIZE, CHANNELS 
 
 class AudioEngine:
@@ -13,7 +12,6 @@ class AudioEngine:
         print("\n--- DAFTAR HARDWARE AUDIO ---")
         for i in range(self.p.get_device_count()):
             info = self.p.get_device_info_by_index(i)
-            # Menampilkan index dan nama device
             print(f"Index {i}: {info['name']}")
 
     def start_stream(self, device_index=None):
@@ -35,7 +33,6 @@ class AudioEngine:
         """Membaca potongan sinyal audio digital."""
         try:
             data = self.stream.read(CHUNK_SIZE, exception_on_overflow=False)
-            # Konversi biner ke array angka untuk diproses DSP
             return np.frombuffer(data, dtype=np.int16)
         except Exception as e:
             print(f"ERROR: Gagal membaca chunk: {e}")

@@ -8,8 +8,7 @@ class BrainEngine:
         self.path = "/Telkom-LLM/0.0.4/llm/chat/completions"
         
         self.history = []
-        self.max_history = 8 # 4 user + 4 assistant
-        
+        self.max_history = 8 
         self.system_prompt = (
             "Anda adalah Asisten STS Telkom yang cerdas. Jawablah dengan padat. "
             "Anda harus mengingat konteks percakapan sebelumnya."
@@ -20,19 +19,16 @@ class BrainEngine:
         try:
             conn = http.client.HTTPSConnection(self.host)
             
-            # 1. Susun Payload (System + History + Current User)
             messages = [{"role": "system", "content": self.system_prompt}]
             
-            # Tambahkan riwayat yang ada
             messages.extend(self.history)
             
-            # Tambahkan input user terbaru
             messages.append({"role": "user", "content": user_text})
 
             payload_data = {
                 "model": "telkom-ai",
-                "messages": messages, # Kirim seluruh konteks
-                "max_tokens": 500, # Kurangi agar lebih cepat
+                "messages": messages, 
+                "max_tokens": 500, 
                 "temperature": 0.7,
                 "stream": False 
             }
