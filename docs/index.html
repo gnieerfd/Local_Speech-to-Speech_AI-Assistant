@@ -21,21 +21,19 @@
         <h1>🔬 Voice Assistant</h1>
         <button id="recordBtn" class="btn-record">Start </button>
         <div id="status">Status: Ready</div>
-        <div class="lab-grid">
-            <div class="chat-column" style="border-color: #ef4444;">
-                <h3 style="color: #ef4444;">🔴 RAW SIGNAL</h3>
-                <button onclick="playComparison('raw')" style="padding: 5px 10px; font-size: 12px; margin-bottom: 10px;">🔊 Play Raw</button>
-                <p><strong>User:</strong> <span id="userTextRaw">-</span></p><hr>
-                <p><strong>Res:</strong> <span id="assistantTextRaw">-</span></p>
-            </div>
-            <div class="chat-column" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🟢 CLEAN SIGNAL (VAD)</h3>
-                <button onclick="playComparison('clean')" style="padding: 5px 10px; font-size: 12px; margin-bottom: 10px;">🔊 Play Clean</button>
-                <p><strong>User:</strong> <span id="userTextClean">-</span></p><hr>
-                <p><strong>Res:</strong> <span id="assistantTextClean">-</span></p>
-            </div>
+    <div class="lab-grid">
+        <div class="chat-column" style="border-color: #ef4444;">
+            <h3 style="color: #ef4444;">🔴 RAW SIGNAL</h3>
+            <button onclick="playComparison('raw')" style="...">🔊 Play Raw</button>
+            <p><strong>ASR:</strong> <span id="userTextRaw">-</span></p>
         </div>
-        <button id="playBtn" style="display:none; background:#22c55e; width:100%;">🔊 Replay Response</button>
+        <div class="chat-column" style="border-color: #22c55e;">
+            <h3 style="color: #22c55e;">🟢 CLEAN SIGNAL (DSP)</h3>
+            <button onclick="playComparison('clean')" style="...">🔊 Play Clean</button>
+            <p><strong>ASR:</strong> <span id="userTextClean">-</span></p>
+        </div>
+    </div>
+<button id="playBtn" style="display:none; background:#22c55e; width:100%;">🔊 Replay Response</button>
     </div>
 
 <script>
@@ -89,32 +87,27 @@
     }
 
     async function sendAudio() {
-        // Gunakan type sesuai format MediaRecorder
         const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
         const formData = new FormData();
         formData.append('audio_raw', audioBlob, 'raw.mp3');
         formData.append('audio_clean', audioBlob, 'clean.mp3');
 
         try {
-            statusText.innerText = "Status: Processing...";
+            statusText.innerText = "Status: Processing DSP...";
             const response = await fetch(BACKEND_URL, { method: 'POST', body: formData });
             const data = await response.json();
             
+            // HANYA UPDATE ELEMEN YANG BENERAN ADA DI HTML
             document.getElementById('userTextRaw').innerText = data.raw.text;
-            document.getElementById('assistantTextRaw').innerText = data.raw.response;
             document.getElementById('userTextClean').innerText = data.clean.text;
-            document.getElementById('assistantTextClean').innerText = data.clean.response;
             
+            // Simpan audio hasil transcode buat didengerin manual
             currentRawAudio = data.raw.audio;
             currentCleanAudio = data.clean.audio;
             
             statusText.innerText = "Status: Analysis Complete";
 
-            if (data.audio) {
-                audioPlayer.src = `data:audio/mpeg;base64,${data.audio}`; // gTTS adalah MP3!
-                audioPlayer.play().catch(e => console.warn("Autoplay blocked:", e));
-            }
-            document.getElementById('playBtn').style.display = "block";
+            // Hapus bagian audioPlayer.play() asisten di sini kalau cuma fokus DSP
         } catch (err) {
             statusText.innerText = "Status: Backend Error!";
             console.error(err);

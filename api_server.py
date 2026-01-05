@@ -49,49 +49,34 @@ def transcode_to_mp3(input_path, output_path, is_clean=False):
     
 @app.post("/ask_sts")
 async def ask_sts(audio_raw: UploadFile = File(...), audio_clean: UploadFile = File(...)):
-    # Nama file sementara
-    raw_in = "raw_input.tmp"
-    clean_in = "clean_input.tmp"
-    raw_out = "raw_output.mp3"
-    clean_out = "clean_output.mp3"
-
     try:
-        # 1. Simpan input asli dari iPhone (biasanya AAC/MP4)
+        raw_in, clean_in = "raw_input.tmp", "clean_input.tmp"
+        raw_out, clean_out = "raw_output.mp3", "clean_output.mp3"
+
         with open(raw_in, "wb") as f: f.write(await audio_raw.read())
         with open(clean_in, "wb") as f: f.write(await audio_clean.read())
 
-        # 2. Transkripsi (Faster-Whisper pinter, dia bisa baca .tmp walau isinya mp4)
-        text_raw = asr.transcribe_file(raw_in)    
-        text_clean = asr.transcribe_file(clean_in) 
+        # 1. DSP Processing: Raw vs Clean (dengan filter noise reduction)
+        transcode_to_mp3(raw_in, raw_out, is_clean=False)
+        transcode_to_mp3(clean_in, clean_out, is_clean=True) # Filter 'afftdn' aktif
 
-        # 3. TRANSCODING: Ubah ke MP3 murni buat dikirim balik ke iPhone
-        transcode_to_mp3(raw_in, raw_out, is_clean=False) # RAW apa adanya
-        transcode_to_mp3(clean_in, clean_out, is_clean=True) # CLEAN pake filter
+        # 2. ASR Transcription
+        text_raw = asr.transcribe_file(raw_in)
+        text_clean = asr.transcribe_file(clean_in)
 
-        # 4. Proses Otak AI (Hanya satu kali biar history aman)
-        answer_final = brain.generate_response(text_clean)
-
-        # 5. Generate Suara Asisten (TTS lo udah output MP3 kan?)
-        audio_base64 = tts.generate(answer_final)
-
+        # 3. Kirim HANYA data perbandingan DSP
         return {
             "raw": {
                 "text": text_raw, 
-                "audio": file_to_base64(raw_out) # Kirim MP3 hasil transcode
+                "audio": file_to_base64(raw_out) 
             },
             "clean": {
                 "text": text_clean, 
-                "response": answer_final,
-                "audio": file_to_base64(clean_out) # Kirim MP3 hasil transcode
-            },
-            "audio": audio_base64 
+                "audio": file_to_base64(clean_out) 
+            }
         }
     except Exception as e:
-        print(f"[CRITICAL ERROR]: {e}")
         return {"error": str(e)}, 500
-    finally:
-        for f in [raw_in, clean_in, raw_out, clean_out]:
-            if os.path.exists(f): os.remove(f)
      
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
